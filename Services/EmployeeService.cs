@@ -1,6 +1,5 @@
 ﻿using EmployeeManagement.Data;
 using EmployeeManagement.Models;
-using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.EntityFrameworkCore;
 
 namespace EmployeeManagement.Services
@@ -28,7 +27,7 @@ namespace EmployeeManagement.Services
             return employee;
         }
 
-        public async Task<Employee>? UpdateEmployeeAsync(int Id, Employee employee)
+        public async Task<Employee?> UpdateEmployeeAsync(int Id, Employee employee)
         {
             var existingEmployee = await _context.Employees.FindAsync(Id);
 
