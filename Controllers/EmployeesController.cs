@@ -23,14 +23,14 @@ namespace EmployeeManagement.Controllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> CreateEmployees(Employee employee)
+        public async Task<IActionResult> CreateEmployee(Employee employee)
         {
             var CreatedEmployee = await _employeeService.CreateEmployeeAsync(employee);
-            return Ok(CreatedEmployee);
+            return CreatedAtAction(nameof(GetEmployeeById), new { id = CreatedEmployee.Id }, CreatedEmployee);
         }
 
         [HttpGet("{id}")]
-        public async Task<IActionResult> GetEmployeeByIdAsync(int id)
+        public async Task<IActionResult> GetEmployeeById(int id)
         {
             var employee = await _employeeService.GetEmployeeByIdAsync(id);
             if (employee == null)
@@ -55,7 +55,7 @@ namespace EmployeeManagement.Controllers
         }
 
         [HttpDelete("{id}")]
-        public async Task<IActionResult> DeleteEmployeeAsync(int id)
+        public async Task<IActionResult> DeleteEmployee(int id)
         {
             var deletedEmployee = await _employeeService.DeleteEmployeeAsync(id);
             if (deletedEmployee == false)
