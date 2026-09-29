@@ -1,4 +1,5 @@
 ﻿using EmployeeManagement.Data;
+using EmployeeManagement.DTOs;
 using EmployeeManagement.Models;
 using Microsoft.EntityFrameworkCore;
 
@@ -7,27 +8,67 @@ namespace EmployeeManagement.Services
     public class EmployeeService : IEmployeeService
     {
         private readonly AppDbContext _context;
+        private readonly ILogger<EmployeeService> _logger;
 
-        public EmployeeService(AppDbContext context)
+        public EmployeeService(AppDbContext context, ILogger<EmployeeService> logger)
         {
             _context = context;
+            _logger = logger;
         }
 
-        public async Task<List<Employee>> GetEmployeesAsync()
+
+        public async Task<List<EmployeeResponseDto>> GetEmployeesAsync()
         {
-            var employees = await _context.Employees.AsNoTracking().ToListAsync();
+            var employees = await _context.Employees
+                .Select(e => new EmployeeResponseDto
+                {
+                    Id = e.Id,
+                    Name = e.Name,
+                    Email = e.Email,
+                    Department = e.Department,
+                    Salary = e.Salary
+                })
+                .ToListAsync();
 
             return employees;
         }
 
-        public async Task<Employee> CreateEmployeeAsync(Employee employee)
+        public async Task<EmployeeResponseDto?> CreateEmployeeAsync(CreateEmployeeDto employee)
         {
-             _context.Employees.Add(employee);
+            var existsEmail = await _context.Employees.AnyAsync(e => e.Email == employee.Email);
+
+            if (existsEmail)
+            {
+                _logger.LogWarning("Attempt to create an employee with duplicate email : {Email}", employee.Email);
+                return null;
+            }
+
+           
+
+            var newEmployee = new Employee
+            {
+                Name = employee.Name,
+                Email = employee.Email,
+                Department = employee.Department,
+                Salary = employee.Salary,
+            };
+
+            _context.Employees.Add(newEmployee);
             await _context.SaveChangesAsync();
-            return employee;
+            _logger.LogInformation("Employee {EmployeeId} created successfully.", newEmployee.Id);
+
+            var employeeResponse = new EmployeeResponseDto
+            {
+                Id = newEmployee.Id,
+                Name = newEmployee.Name,
+                Email = newEmployee.Email,
+                Department = newEmployee.Department,
+                Salary = newEmployee.Salary
+            };
+            return employeeResponse;
         }
 
-        public async Task<Employee?> UpdateEmployeeAsync(int Id, Employee employee)
+        public async Task<EmployeeResponseDto?> UpdateEmployeeAsync(int Id, UpdateEmployeeDto employee)
         {
             var existingEmployee = await _context.Employees.FindAsync(Id);
 
@@ -44,7 +85,16 @@ namespace EmployeeManagement.Services
 
             await _context.SaveChangesAsync();
 
-            return existingEmployee;
+            var employeeResponse = new EmployeeResponseDto
+            {
+                Id = existingEmployee.Id,
+                Name = existingEmployee.Name,
+                Email = existingEmployee.Email,
+                Department = existingEmployee.Department,
+                Salary = existingEmployee.Salary
+            };
+
+            return employeeResponse;
         }
 
         public async Task<bool> DeleteEmployeeAsync(int Id)
@@ -61,18 +111,20 @@ namespace EmployeeManagement.Services
             return true;
         }
 
-        public async Task<Employee?> GetEmployeeByIdAsync(int Id)
+        public async Task<EmployeeResponseDto?> GetEmployeeByIdAsync(int id)
         {
-            var employeeToFind = await _context.Employees.FindAsync(Id);
-
-            if (employeeToFind == null)
-            {
-                return null;
-            }
+            var employeeToFind = await _context.Employees.Where(e => e.Id == id)
+                .Select(e => new EmployeeResponseDto
+                {
+                    Id = e.Id,
+                    Name = e.Name,
+                    Email = e.Email,
+                    Department = e.Department,
+                    Salary = e.Salary,
+                })
+                .FirstOrDefaultAsync();
 
             return employeeToFind;
-
-
         }
     }
 }

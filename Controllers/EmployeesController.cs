@@ -1,4 +1,4 @@
-﻿using EmployeeManagement.Models;
+﻿using EmployeeManagement.DTOs;
 using EmployeeManagement.Services;
 using Microsoft.AspNetCore.Mvc;
 
@@ -23,9 +23,15 @@ namespace EmployeeManagement.Controllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> CreateEmployee(Employee employee)
+        public async Task<IActionResult> CreateEmployee(CreateEmployeeDto employee)
         {
             var CreatedEmployee = await _employeeService.CreateEmployeeAsync(employee);
+
+            if (CreatedEmployee == null)
+            {
+                return Conflict("An Employee with this email already exists");
+            }
+
             return CreatedAtAction(nameof(GetEmployeeById), new { id = CreatedEmployee.Id }, CreatedEmployee);
         }
 
@@ -44,7 +50,7 @@ namespace EmployeeManagement.Controllers
         }
 
         [HttpPut("{id}")]
-        public async Task<IActionResult> UpdateEmployee(int id, Employee employee)
+        public async Task<IActionResult> UpdateEmployee(int id, UpdateEmployeeDto employee)
         {
             var updatedEmployee = await _employeeService.UpdateEmployeeAsync(id, employee);
             if (updatedEmployee == null)
